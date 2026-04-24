@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Capping & Pinning</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+
+  <!-- Inline Style and Tailwind Config -->
+  <style type="text/tailwindcss">
+    @theme {
+      --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+      --font-serif: "Playfair Display", serif;
+      
+      --color-pink-primary: #ec4899;
+      --color-pink-soft: #fdf2f8;
+      --color-pink-medium: #fbcfe8;
+      --color-pink-deep: #be185d;
+    }
+
+    @utility glass-pink {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      box-shadow: 0 20px 40px -10px rgba(236, 72, 153, 0.25);
+    }
+
+    @utility pink-gradient {
+      background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 50%, #fbcfe8 100%);
+    }
+  </style>
+
+  <!-- Custom CSS Animations and Utilities -->
+  <style>
+    /* Falling Hearts Animation */
+    @keyframes fall {
+      0% { transform: translateY(-10vh) rotate(0deg); }
+      100% { transform: translateY(110vh) rotate(360deg); }
+    }
+    .heart-fall {
+      position: absolute;
+      animation-name: fall;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+
+    /* Core UI Animations */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .animate-fade-in { animation: fadeInUp 0.5s ease-out forwards; }
+    
+    @keyframes fadeOutDown {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(20px) scale(0.95); }
+    }
+    .animate-fade-out { animation: fadeOutDown 0.4s ease-in forwards; }
+
+    /* Envelope Animations */
+    .envelope-perspective { perspective: 1500px; }
+    .transition-transform-slow { transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease; }
+    .transition-all-slow { transition: all 0.6s ease-in-out; }
+    
+    .flap-open { transform: rotateX(180deg); }
+    .letter-slide { transform: translateY(-65%); opacity: 1; z-index: 40 !important; }
+    
+    @keyframes pulseHeart {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.1); }
+    }
+    .animate-pulse-heart { animation: pulseHeart 1.5s infinite ease-in-out; }
+
+    @keyframes textPulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    .animate-text-pulse { animation: textPulse 2s infinite; }
+
+    /* Utility */
+    .hidden-force { display: none !important; }
+    .zoom-out { transform: scale(1.5); opacity: 0; }
+
+    .photo-envelope-image {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      transform: translate(-50%, -50%) scale(1.26);
+      pointer-events: none;
+      user-select: none;
+      z-index: 20;
+      filter: drop-shadow(0 16px 30px rgba(121, 71, 91, 0.28));
+    }
+
+    .photo-envelope-letter {
+      left: 22%;
+      bottom: 20%;
+      width: 56%;
+      height: 44%;
+      background: linear-gradient(180deg, #fff 0%, #fff9fc 100%);
+      border-radius: 0.75rem 0.75rem 0 0;
+      box-shadow: 0 12px 24px rgba(121, 71, 91, 0.16);
+      z-index: 10;
+      overflow: hidden;
+      transform: translateY(42%);
+      opacity: 0;
+    }
+
+    .photo-envelope-flap,
+    .photo-envelope-seal {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+  </style>
+</head>
+<body class="min-h-screen pink-gradient font-sans text-pink-900 overflow-hidden relative flex items-center justify-center">
+
+  <!-- Background Falling Hearts -->
+  <div id="falling-hearts" class="fixed inset-0 pointer-events-none z-0 overflow-hidden text-pink-400 opacity-40"></div>
+
+  <!-- Landing View -->
+  <div id="view-landing" class="w-11/12 max-w-2xl text-center z-10 space-y-4 md:space-y-6 flex flex-col items-center glass-pink px-6 py-10 md:p-16 lg:p-20 rounded-[2rem] md:rounded-[3rem] shadow-xl animate-fade-in">
+    <!-- Nurse Cap -->
+    <div class="flex justify-center mb-4 sm:mb-6">
+      <div class="w-[60px] h-[30px] sm:w-[80px] sm:h-[40px] bg-white border-[3px] border-pink-500 rounded-[50%_50%_0_0] relative shadow-lg">
+        <div class="absolute -top-1 left-1/2 -translate-x-1/2 text-pink-500 font-bold text-xl sm:text-2xl leading-none">+</div>
+      </div>
+    </div>
+    
+    <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl text-pink-600 font-bold tracking-tight leading-tight">
+      Capping & Pinning
+    </h1>
+    <p class="text-pink-500 text-sm sm:text-base md:text-xl font-medium tracking-widest uppercase mt-2 md:mt-4">
+      Celebrating a Nursing Milestone
+    </p>
+    
+    <button id="btn-start" class="mt-8 md:mt-10 px-8 py-4 sm:px-10 sm:py-5 bg-gradient-to-r from-pink-500 to-rose-400 text-white rounded-full font-bold text-base md:text-lg shadow-xl hover:shadow-pink-400/50 transition-all flex items-center justify-center gap-2 group border border-pink-300 w-full sm:w-auto cursor-pointer">
+      Start Ceremony
+      <svg class="group-hover:translate-x-2 transition-transform h-5 w-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+
+  <!-- Password Popup View (Hidden by default) -->
+  <div id="view-popup" class="hidden-force fixed inset-0 z-50 flex items-center justify-center bg-pink-900/30 backdrop-blur-md p-4 animate-fade-in">
+    <div class="glass-pink p-8 sm:p-10 md:p-12 rounded-[2rem] shadow-2xl w-11/12 max-w-[420px] text-center relative">
+      <button id="btn-close-popup" class="absolute top-4 right-4 sm:top-6 sm:right-6 text-pink-400 hover:text-pink-600 bg-white/50 rounded-full p-2 transition-colors cursor-pointer" aria-label="Close">
+        <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      
+      <div class="flex justify-center mb-6">
+         <div class="w-12 h-12 sm:w-16 sm:h-16 bg-white/80 rounded-full flex items-center justify-center shadow-inner">
+            <svg class="text-pink-500 w-6 h-6 sm:w-7 sm:h-7" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+         </div>
+      </div>
+      
+      <h2 class="font-serif text-2xl sm:text-3xl text-pink-700 mb-6 sm:mb-8 font-bold">Access Code</h2>
+      
+      <form id="form-password" class="space-y-4 sm:space-y-6">
+        <input id="input-password" type="password" placeholder="••••••" class="w-full text-center text-2xl sm:text-3xl tracking-[0.3em] sm:tracking-[0.5em] py-3 sm:py-4 border-b-2 border-pink-300 bg-white/40 rounded-t-xl focus:outline-none focus:border-pink-500 focus:bg-white/60 text-pink-700 transition-colors placeholder:text-pink-300 placeholder:tracking-normal" />
+        
+        <button type="submit" class="cursor-pointer w-full py-3 sm:py-4 bg-gradient-to-r from-pink-500 to-rose-400 text-white rounded-xl font-bold text-base sm:text-lg shadow-lg hover:shadow-pink-400/40 transition-all">
+          Proceed
+        </button>
+        
+        <div class="h-6 mt-2 sm:mt-4">
+          <p id="error-msg" class="hidden-force text-rose-500 text-xs sm:text-sm font-bold bg-rose-50 py-1 sm:py-2 rounded-lg animate-fade-in">
+            Incorrect code. Try again.
+          </p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Message Environment View (Hidden by default) -->
+  <div id="view-message" class="hidden-force fixed inset-0 z-30 flex overflow-y-auto px-4 touch-pan-y animate-fade-in">
+    <div class="m-auto w-full max-w-[700px] py-16 flex justify-center items-center overflow-x-hidden min-h-full">
+      
+      <!-- Interactive Envelope Container -->
+      <div id="envelope-wrapper" class="flex flex-col items-center justify-center p-4 w-full">
+        <div id="envelope" class="relative w-[360px] h-[250px] sm:w-[450px] sm:h-[310px] md:w-[560px] md:h-[390px] cursor-pointer touch-manipulation envelope-perspective transition-all-slow">
+          <!-- The Letter Inside -->
+          <div id="env-letter" class="absolute photo-envelope-letter flex flex-col items-center pt-6 sm:pt-8 px-4 sm:px-6 shadow-md transition-transform-slow">
+            <svg class="h-6 w-6 sm:h-8 sm:w-8 text-pink-400 mb-2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/></svg>
+            <div class="font-serif text-pink-600 text-lg sm:text-xl font-bold text-center leading-tight">To My Dearest Sherina</div>
+            <div class="w-12 sm:w-16 h-1 bg-pink-100 mt-3 sm:mt-4 rounded-full"></div>
+            <div class="w-20 sm:w-24 h-1 bg-pink-100 mt-2 rounded-full"></div>
+            <div class="w-16 sm:w-20 h-1 bg-pink-100 mt-2 rounded-full"></div>
+          </div>
+
+          <img src="envelope1.png" alt="Pink envelope" class="photo-envelope-image" />
+
+          <!-- Animation hooks retained for existing JS -->
+          <div id="env-top-flap" class="photo-envelope-flap"></div>
+
+          <div id="heart-seal" class="photo-envelope-seal"></div>
+          
+          <div id="tap-prompt" class="absolute -bottom-12 left-0 w-full text-center text-pink-600 font-serif italic text-base sm:text-lg animate-text-pulse transition-all-slow">
+            Tap to open your letter...
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Full Letter View (Hidden until envelope completes) -->
+      <div id="final-letter" class="hidden-force relative w-full glass-pink rounded-[2rem] md:rounded-[2.5rem] p-6 pt-12 sm:p-10 sm:pt-16 md:p-16 md:pt-20 flex-col items-center text-center shadow-2xl mt-8">
+        <div class="absolute -top-8 sm:-top-10 md:-top-12 left-1/2 -translate-x-1/2 bg-white p-3 sm:p-4 md:p-5 rounded-full shadow-lg border-2 border-pink-100">
+          <div class="w-[48px] h-[24px] sm:w-[58px] sm:h-[28px] md:w-[68px] md:h-[34px] bg-white border-[3px] border-pink-500 rounded-[50%_50%_0_0] relative shadow-sm">
+            <div class="absolute -top-1 left-1/2 -translate-x-1/2 text-pink-500 font-bold text-lg sm:text-xl md:text-2xl leading-none">+</div>
+          </div>
+        </div>
+        
+        <button id="btn-back" class="absolute top-4 right-4 sm:top-6 sm:right-6 text-pink-400 hover:text-pink-600 bg-white/50 rounded-full p-2 transition-colors cursor-pointer" aria-label="Back">
+          <svg class="sm:w-5 sm:h-5 w-[18px] h-[18px]" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+
+        <h2 class="font-serif text-3xl sm:text-4xl md:text-5xl text-pink-600 mb-6 sm:mb-8 md:mb-10 font-bold">
+          To My Renren,
+        </h2>
+        
+        <div class="space-y-4 sm:space-y-6 text-pink-800 leading-relaxed italic text-base sm:text-lg md:text-xl px-0 sm:px-4 md:px-8">
+          <p>Congratulations on your Capping, Pinning, and Candle Lighting Ceremony!</p>
+          <p>Watching you walk on this special day brought tears to my eyes because I am so proud of you. I know there were times when you doubted yourself, faced sleepless nights, and wondered if you could survive nursing. But look at you now, you made it this far.</p>
+          <p>All the tears, sacrifices, and hardships were never wasted. Even when you questioned yourself, you still kept going. Now, you have reached this beautiful milestone, and I know this is only the beginning of even greater things ahead.</p>
+          <p>Isaiah 60:22, "When the time is right, I, the Lord, will make it happen." May this verse remind you that God's timing is always perfect, and every dream he placed in your heart will unfold according to his plan.</p>
+          <p>I am so proud of you, Renren. You are halfway there, and I will always be cheering for you all the way. Today, you are officially a Student Nurse, and someday, you will become the Registered Nurse.</p>
+          <p>May the Lord continue to guide and protect you as you chase your dreams. May he give you strength, wisdom, courage, and a heart full of compassion as you continue your journey.</p>
+          <p>Congratulations, Renren. I am so proud of you, my future RN!</p>
+        </div>
+
+        <div class="mt-10 sm:mt-12 md:mt-14 border-t-2 border-pink-200 pt-6 sm:pt-8 w-full">
+          <p class="font-serif text-xl sm:text-2xl text-pink-600 font-bold">Love,</p>
+          <p class="font-serif text-2xl sm:text-3xl text-pink-500 italic mt-1 sm:mt-2">Venny</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <audio id="bg-music" loop preload="auto">
+    <source src="../music.mp4" type="audio/mp4" />
+  </audio>
+
+  <!-- Vanilla JavaScript Logic -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Elements
+      const fallingHeartsContainer = document.getElementById('falling-hearts');
+      const viewLanding = document.getElementById('view-landing');
+      const viewPopup = document.getElementById('view-popup');
+      const viewMessage = document.getElementById('view-message');
+      
+      const envelopeWrapper = document.getElementById('envelope-wrapper');
+      const envelopeInner = document.getElementById('envelope');
+      const finalLetter = document.getElementById('final-letter');
+
+      // Buttons
+      const btnStart = document.getElementById('btn-start');
+      const btnClosePopup = document.getElementById('btn-close-popup');
+      const formPassword = document.getElementById('form-password');
+      const inputPassword = document.getElementById('input-password');
+      const errorMsg = document.getElementById('error-msg');
+      const btnBack = document.getElementById('btn-back');
+
+      // Envelope Parts
+      const envTopFlap = document.getElementById('env-top-flap');
+      const envLetter = document.getElementById('env-letter');
+      const heartSeal = document.getElementById('heart-seal');
+      const tapPrompt = document.getElementById('tap-prompt');
+      const bgMusic = document.getElementById('bg-music');
+
+      let envelopeOpened = false;
+      let musicStarted = false;
+
+      async function startBackgroundMusic() {
+        if (!bgMusic) return;
+
+        bgMusic.volume = 0.35;
+        bgMusic.muted = false;
+
+        try {
+          await bgMusic.play();
+          musicStarted = true;
+        } catch (error) {
+          musicStarted = false;
+        }
+      }
+
+      // 1. Setup Falling Hearts
+      function generateHearts() {
+        for (let i = 0; i < 20; i++) {
+          const heart = document.createElement('div');
+          heart.classList.add('heart-fall');
+          heart.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
+          
+          const size = Math.random() * 15 + 10;
+          const left = Math.random() * 100;
+          const delay = Math.random() * 10;
+          const duration = Math.random() * 5 + 10;
+          
+          heart.style.width = size + 'px';
+          heart.style.height = size + 'px';
+          heart.style.left = left + 'vw';
+          heart.style.animationDuration = duration + 's';
+          heart.style.animationDelay = delay + 's';
+          
+          fallingHeartsContainer.appendChild(heart);
+        }
+      }
+      generateHearts();
+      startBackgroundMusic().catch(() => {});
+
+      // 2. View Switching Functions
+      function showPopup() {
+        viewPopup.classList.remove('hidden-force');
+        inputPassword.focus();
+      }
+
+      function hidePopup() {
+        viewPopup.classList.add('hidden-force');
+        inputPassword.value = '';
+        errorMsg.classList.add('hidden-force');
+      }
+
+      function showMessageView() {
+        viewLanding.classList.add('hidden-force');
+        viewPopup.classList.add('hidden-force');
+        viewMessage.classList.remove('hidden-force');
+        resetEnvelope();
+      }
+
+      function resetToLanding() {
+        viewMessage.classList.add('hidden-force');
+        viewLanding.classList.remove('hidden-force');
+        resetEnvelope();
+      }
+
+      function resetEnvelope() {
+        envelopeOpened = false;
+        
+        // Reset states
+        envelopeWrapper.classList.remove('hidden-force');
+        finalLetter.classList.remove('flex');
+        finalLetter.classList.add('hidden-force');
+        
+        heartSeal.style.opacity = '1';
+        heartSeal.style.transform = '';
+        tapPrompt.style.opacity = '1';
+        
+        envTopFlap.classList.remove('flap-open');
+        envLetter.classList.remove('letter-slide');
+        envelopeInner.classList.remove('zoom-out');
+      }
+
+      // 3. Event Listeners
+      btnStart.addEventListener('click', showPopup);
+      btnClosePopup.addEventListener('click', hidePopup);
+      btnBack.addEventListener('click', resetToLanding);
+      document.addEventListener('click', () => {
+        startBackgroundMusic().catch(() => {});
+      }, { once: true });
+      document.addEventListener('keydown', () => {
+        startBackgroundMusic().catch(() => {});
+      }, { once: true });
+
+      formPassword.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (inputPassword.value === '042426') {
+          showMessageView();
+        } else {
+          errorMsg.classList.remove('hidden-force');
+          inputPassword.value = '';
+          setTimeout(() => {
+            errorMsg.classList.add('hidden-force');
+          }, 2000);
+        }
+      });
+
+      // 4. Envelope Animation Sequence
+      envelopeInner.addEventListener('click', () => {
+        if (envelopeOpened) return;
+        envelopeOpened = true;
+
+        // Fade out seal & text
+        heartSeal.style.opacity = '0';
+        heartSeal.style.transform = 'scale(0)';
+        tapPrompt.style.opacity = '0';
+
+        // Animate
+        setTimeout(() => {
+          envTopFlap.classList.add('flap-open'); // Open flap
+        }, 100);
+
+        setTimeout(() => {
+          envLetter.classList.add('letter-slide'); // Slide letter up
+        }, 700);
+
+        setTimeout(() => {
+          envelopeInner.classList.add('zoom-out'); // Zoom out and fade
+          
+          setTimeout(() => {
+            envelopeWrapper.classList.add('hidden-force');
+            finalLetter.classList.remove('hidden-force');
+            finalLetter.classList.add('flex');
+            finalLetter.classList.add('animate-fade-in');
+          }, 600); // Wait for zoom out finish
+
+        }, 1600);
+      });
+    });
+  </script>
+</body>
+</html>
